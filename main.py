@@ -106,6 +106,27 @@ def rz(binary_seq):
         t += 1
     return time, signal
 
+def cmi(binary_seq):
+    signal, time = [], []
+    t = 0
+    last_one_level = 1  # Alterna entre 1 e 0 para bits '1'
+
+    for bit in binary_seq:
+        if bit == '0':
+            # Transição 0 -> 1 em meia duração
+            signal += [0, 1]
+            time += [t, t + 0.5]
+        else:
+            # Bit '1' usa nível constante (0 ou 1), alternando
+            signal += [last_one_level, last_one_level]
+            time += [t, t + 1]
+            # Alternar nível para o próximo '1'
+            last_one_level = 0 if last_one_level == 1 else 1
+        t += 1
+
+    return time, signal
+
+
 def mlt_3(binary_seq):
     signal, time = [], []
     t = 0
@@ -191,7 +212,7 @@ class LineCodeApp:
         self.options = [
             "NRZ-L", "NRZ-I", "AMI", "Pseudoternário",
             "Manchester", "Manchester Diferencial",
-            "HDB3", "MLT-3", "RZ"
+            "HDB3", "MLT-3", "RZ", "CMI"
         ]
         for opt in self.options:
             ttk.Radiobutton(sidebar, text=opt, variable=self.code_type, value=opt).pack(anchor=tk.W)
@@ -232,6 +253,8 @@ class LineCodeApp:
             t, s = hdb3(binary_seq)
         elif code_type == "MLT-3":
             t, s = mlt_3(binary_seq)
+        elif code_type == "CMI":
+            t, s = cmi(binary_seq)
         elif code_type == "RZ":
             t, s = rz(binary_seq)
         else:
