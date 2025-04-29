@@ -90,13 +90,12 @@ def mlt_3(binary_seq):
     signal, time = [], []
     t = 0
     current_level = 0
-    # Define a sequência cíclica de níveis: 0 -> +1 -> 0 -> -1 -> 0 -> ...
     levels = [0, 1, 0, -1]
-    state = 0  # Índice na sequência de níveis
+    state = 0 
 
     for bit in binary_seq:
         if bit == '1':
-            state = (state + 1) % 4  # Avança para o próximo estado
+            state = (state + 1) % 4
         current_level = levels[state]
         signal += [current_level, current_level]
         time += [t, t + 1]
@@ -107,28 +106,52 @@ def mlt_3(binary_seq):
 
 def hdb3(binary_seq):
     signal, time = [], []
-    t, level, zero_count, violation = 0, 1, 0, False
-    for bit in binary_seq:
+    t = 0
+    level = 1  # Primeiro pulso é +1
+    pulse_count = 0  # Conta quantos pulsos '1' já houve
+    zero_count = 0
+
+    i = 0
+    while i < len(binary_seq):
+        bit = binary_seq[i]
         if bit == '1':
-            if zero_count == 4:
-                # Add a violation pulse
-                signal[-2] = -level if violation else level
-                violation = not violation
-                zero_count = 0
-            signal += [level, level]
-            level = -level
             zero_count = 0
+            level = -level
+            signal += [level, level]
+            pulse_count += 1
+            time += [t, t + 1]
+            t += 1
+            i += 1
         else:
-            zero_count += 1
+            # Conta zeros consecutivos
+            zero_count = 1
+            j = i + 1
+            while j < len(binary_seq) and binary_seq[j] == '0' and zero_count < 4:
+                zero_count += 1
+                j += 1
+
             if zero_count == 4:
-                # Add a zero substitution
-                signal += [0, 0]
-                zero_count = 0
+                if pulse_count % 2 == 0:
+                    # Substitui por B00V
+                    signal += [level, level] + [0, 0] + [0, 0] + [level, level]
+                else:
+                    # Substitui por 000V
+                    signal += [0, 0] + [0, 0] + [0, 0]
+                    level = -level
+                    signal += [level, level]
+                pulse_count = 0
+                time += [t + i2 for i2 in range(4) for _ in (0, 1)]
+                t += 4
+                i += 4
             else:
-                signal += [0, 0]
-        time += [t, t + 1]
-        t += 1
+                # Menos de 4 zeros → insere normalmente
+                for _ in range(zero_count):
+                    signal += [0, 0]
+                    time += [t, t + 1]
+                    t += 1
+                i += zero_count
     return time, signal
+
 
 class LineCodeApp:
     def __init__(self, root):
