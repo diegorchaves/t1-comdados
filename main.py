@@ -88,18 +88,22 @@ def rz(binary_seq):
 
 def mlt_3(binary_seq):
     signal, time = [], []
-    t, level, last_nonzero = 0, 0, 1
+    t = 0
+    current_level = 0
+    # Define a sequência cíclica de níveis: 0 -> +1 -> 0 -> -1 -> 0 -> ...
+    levels = [0, 1, 0, -1]
+    state = 0  # Índice na sequência de níveis
+
     for bit in binary_seq:
         if bit == '1':
-            if level == 0:
-                level = last_nonzero
-            else:
-                last_nonzero = level
-                level = 0
-        signal += [level, level]
+            state = (state + 1) % 4  # Avança para o próximo estado
+        current_level = levels[state]
+        signal += [current_level, current_level]
         time += [t, t + 1]
         t += 1
+
     return time, signal
+
 
 def hdb3(binary_seq):
     signal, time = [], []
