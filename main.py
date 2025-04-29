@@ -40,7 +40,7 @@ def ami(binary_seq):
 
 def pseudoternary(binary_seq):
     signal, time = [], []
-    t, level = 1, 1
+    t, level = 0, 1
     for bit in binary_seq:
         if bit == '0':
             signal += [level, level]
@@ -53,26 +53,46 @@ def pseudoternary(binary_seq):
 
 def manchester(binary_seq):
     signal, time = [], []
-    t = 0
-    for bit in binary_seq:
+    t = 0.0
+
+    for i, bit in enumerate(binary_seq):
         if bit == '1':
-            signal += [1, 0]
+            signal += [-1, 1]
         else:
-            signal += [0, 1]
+            signal += [1, -1]
         time += [t, t + 0.5]
-        t += 1
+        t += 1.0
+
+    # Inserir o ponto inicial no tempo e sinal
+    time = [0.0] + time
+    signal = [signal[0]] + signal
+
     return time, signal
+
 
 def differential_manchester(binary_seq):
     signal, time = [], []
-    t, level = 0, 1
+    t = 0.0
+    level = 1  # Nível inicial
+
     for bit in binary_seq:
         if bit == '0':
-            level = 1 - level
-        signal += [level, 1 - level]
-        time += [t, t + 0.5]
-        t += 1
+            level = -level  # Transição no início do intervalo
+
+        # Primeira metade (início)
+        signal.append(level)
+        time.append(t)
+
+        # Transição obrigatória no meio
+        level = -level
+        signal.append(level)
+        time.append(t + 0.5)
+
+        t += 1.0
+
     return time, signal
+
+
 
 def rz(binary_seq):
     signal, time = [], []
@@ -133,12 +153,15 @@ def hdb3(binary_seq):
             if zero_count == 4:
                 if pulse_count % 2 == 0:
                     # Substitui por B00V
-                    signal += [level, level] + [0, 0] + [0, 0] + [level, level]
+                    level = -level  # B alterna a polaridade
+                    signal += [level, level] + [0, 0] + [0, 0] + [level, level]  # V igual ao B
+                    pulse_count += 2
                 else:
                     # Substitui por 000V
                     signal += [0, 0] + [0, 0] + [0, 0]
-                    level = -level
-                    signal += [level, level]
+                    signal += [level, level]  # V repete a última polaridade (não inverte!)
+                    pulse_count += 1
+
                 pulse_count = 0
                 time += [t + i2 for i2 in range(4) for _ in (0, 1)]
                 t += 4
